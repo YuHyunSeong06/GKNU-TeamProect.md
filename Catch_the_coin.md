@@ -2,17 +2,17 @@
 ### 2025.05.13 GKNU C++ 프로그래밍 과제
 #### 중앙 원을 클릭해서 움직여 랜덤으로 생성되는 코인을 수집하는 게임
 #### 각 코인별 효과/지속시간/점수/확률 추가
-이름	색상	점수	지속시간(초)	능력(효과)	확률(%)
-Purple	PURPLE	5	0.47	1.5초간 속도 0.8배	22
-Blue	BLUE	10	0.46	1.5초간 속도 0.9배	17
-Green	GREEN	15	0.45	1.5초간 속도 0.95배	14
-LightGreen	LIME	20	0.44	-	12
-Yellow	YELLOW	25	0.42	2초간 속도 1.1배	10
-Orange	ORANGE	30	0.40	-	9
-Pink	PINK	40	0.37	2초간 속도 1.3배	7
-Red	RED	50	0.35	2초간 속도 1.5배	5
-White	WHITE	100	0.30	2초간 크기 2배	2
-SkyBlue	SKYBLUE	300	0.39	1.5초간 이동불가(스턴)	2
+##### CoinType	Color 상수	RGB 값	Score	LifeTime(s)	Ability (Effect)	Probability (%)
+##### Red	RED	(230,41,55)	50	0.35	Speed x1.5 for 2s	5
+##### Pink	PINK	(255,109,194)	40	0.37	Speed x1.3 for 2s	7
+##### Orange	ORANGE	(255,161,0)	30	0.40	-	9
+##### Yellow	YELLOW	(253,249,0)	25	0.42	Speed x1.1 for 2s	10
+##### LightGreen	LIME	(0,158,47)	20	0.44	-	12
+##### Green	GREEN	(0,228,48)	15	0.45	Speed x0.95 for 1.5s	14
+##### Blue	BLUE	(0,121,241)	10	0.46	Speed x0.9 for 1.5s	17
+####Purple	PURPLE	(200,122,255)	5	0.47	Speed x0.8 for 1.5s	22
+White	WHITE	(255,255,255)	100	0.30	Size x2 for 2s	2
+SkyBlue	SKYBLUE	(102,191,255)	300	0.39	Can't move for 1.5s (stun)	2
 ```cpp
 #include "raylib.h"
 #include <vector>
