@@ -137,16 +137,16 @@ struct CoinInfo {
 
 // 코인 정보 배열
 CoinInfo coinInfos[] = {
-    { "Red",      RED,      50, 5,  "Speed x1.5 for 2s" },
-    { "Pink",     PINK,     40, 7,  "Speed x1.3 for 2s" },
+    { "Red",      RED,      50, 5,  "Speed x1.5 2s" },
+    { "Pink",     PINK,     40, 7,  "Speed x1.3 2s" },
     { "Orange",   ORANGE,   30, 9,  "-" },
-    { "Yellow",   YELLOW,   25, 10, "Speed x1.1 for 2s" },
+    { "Yellow",   YELLOW,   25, 10, "Speed x1.1 2s" },
     { "LightGreen",LIME,    20, 12, "-" },
-    { "Green",    GREEN,    15, 14, "Speed x0.95 for 1.5s" },
-    { "Blue",     BLUE,     10, 17, "Speed x0.9 for 1.5s" },
-    { "Purple",   PURPLE,   5,  22, "Speed x0.8 for 1.5s" },
-    { "White",    WHITE,    100, 2, "Size x2 for 2s" },
-    { "SkyBlue",  SKYBLUE,  300, 2, "Can't move for 1.5s" }
+    { "Green",    GREEN,    15, 14, "Speed x0.95 1.5s" },
+    { "Blue",     BLUE,     10, 17, "Speed x0.9 1.5s" },
+    { "Purple",   PURPLE,   5,  22, "Speed x0.8 1.5s" },
+    { "White",    WHITE,    100, 2, "Size x2 2s" },
+    { "SkyBlue",  SKYBLUE,  300, 2, "Can't move 1.5s" }
 };
 
 int main() {
@@ -165,8 +165,8 @@ int main() {
     bool dragging = false;
     Vector2 dragOffset = { 0,0 };
 
-    // (1) 이동속도 2배
-    float defaultMoveSpeed = 600.0f;
+    // (1) 이동속도 2.5배
+    float defaultMoveSpeed = 750.0f;
     float moveSpeed = defaultMoveSpeed;
 
     // 버프/디버프/스턴 지속시간
@@ -374,7 +374,7 @@ int main() {
             int quitWidth = MeasureText(quitMsg, 24);
             DrawText(quitMsg, (screenWidth - quitWidth) / 2, 160, 24, GRAY);
 
-            // (3) 코인 능력/확률 표시
+            // (3) 코인 능력/확률 표는 오직 시작화면에만 표시
             int y = 210;
             DrawText("Coin Ability & Probability", 40, y, 28, WHITE); y += 36;
             DrawText("Name      Score   Prob(%)    Ability", 40, y, 22, WHITE); y += 30;
@@ -392,33 +392,48 @@ int main() {
             for (const auto& coin : coins)
                 coin.Draw();
 
-            DrawText(TextFormat("Score: %d", score), 10, 10, 30, WHITE);
+            // (4) 게임 중에는 색상+점수+능력만 상단 가로로 배치
+            int margin = 10;
+            int boxW = 120, boxH = 38;
+            int gap = 10;
+            int startX = margin;
+            int y = margin;
+            for (int i = 0; i < (int)CoinType::COUNT; i++) {
+                DrawRectangle(startX, y, boxW, boxH, Fade(coinInfos[i].color, 0.6f));
+                DrawRectangleLines(startX, y, boxW, boxH, coinInfos[i].color);
+                DrawText(TextFormat("%s", coinInfos[i].name), startX + 8, y + 5, 18, coinInfos[i].color);
+                DrawText(TextFormat("%d", coinInfos[i].score), startX + 8, y + 20, 16, WHITE);
+                DrawText(coinInfos[i].ability, startX + 45, y + 20, 14, WHITE);
+                startX += boxW + gap;
+            }
 
+            // (5) 하단에 점수와 시간 표시 (시간이 10초 이하일 때 빨간색)
             float elapsed = GetTime() - gameStartTime;
             float remaining = TIME_LIMIT - elapsed;
             if (remaining < 0) remaining = 0;
-            DrawText(TextFormat("Time: %.1f", remaining), screenWidth - 160, 10, 30, WHITE);
 
+            int bottomMargin = 30;
+            int textFontSize = 36;
+
+            // 점수
+            DrawText(TextFormat("Score: %d", score),
+                20, screenHeight - bottomMargin - textFontSize, textFontSize, WHITE);
+
+            // 시간 (10초 이하일 때 빨간색)
+            Color timeColor = (remaining <= 10.0f) ? RED : WHITE;
+            int timeTextWidth = MeasureText(TextFormat("Time: %.1f", remaining), textFontSize);
+            DrawText(TextFormat("Time: %.1f", remaining),
+                screenWidth - timeTextWidth - 20, screenHeight - bottomMargin - textFontSize, textFontSize, timeColor);
+
+            // 버프 상태 안내
             if (whiteBuffActive) {
-                DrawText("White Buff: Size x2", 10, 50, 24, WHITE);
+                DrawText("White Buff: Size x2", 10, 70, 24, WHITE);
             }
             if (speedBuffActive) {
-                DrawText(TextFormat("Speed Buff: %.2fx", speedBuffMultiplier), 10, 80, 24, WHITE);
+                DrawText(TextFormat("Speed Buff: %.2fx", speedBuffMultiplier), 10, 100, 24, WHITE);
             }
             if (stunActive) {
-                DrawText("Stunned! Can't move!", 10, 110, 24, SKYBLUE);
-            }
-
-            // (3) 게임 중에도 코인 능력/확률 표시
-            int y = 170;
-            DrawText("Coin Ability & Probability", 40, y, 24, WHITE); y += 30;
-            DrawText("Name      Score   Prob(%)    Ability", 40, y, 18, WHITE); y += 24;
-            for (int i = 0; i < (int)CoinType::COUNT; i++) {
-                DrawRectangle(40, y + 2, 16, 16, coinInfos[i].color);
-                DrawText(TextFormat("%-9s %3d     %5.1f      %s",
-                    coinInfos[i].name, coinInfos[i].score, coinInfos[i].probability, coinInfos[i].ability),
-                    62, y, 16, coinInfos[i].color);
-                y += 20;
+                DrawText("Stunned! Can't move!", 10, 130, 24, SKYBLUE);
             }
         }
         else if (state == GameState::GAMEOVER) {
@@ -434,18 +449,6 @@ int main() {
             const char* quitMsg = "Press Esc key to Quit";
             int quitWidth = MeasureText(quitMsg, 24);
             DrawText(quitMsg, (screenWidth - quitWidth) / 2, screenHeight / 2 + 90, 24, GRAY);
-
-            // (3) 게임오버에도 코인 능력/확률 표시
-            int y = 170;
-            DrawText("Coin Ability & Probability", 40, y, 24, WHITE); y += 30;
-            DrawText("Name      Score   Prob(%)    Ability", 40, y, 18, WHITE); y += 24;
-            for (int i = 0; i < (int)CoinType::COUNT; i++) {
-                DrawRectangle(40, y + 2, 16, 16, coinInfos[i].color);
-                DrawText(TextFormat("%-9s %3d     %5.1f      %s",
-                    coinInfos[i].name, coinInfos[i].score, coinInfos[i].probability, coinInfos[i].ability),
-                    62, y, 16, coinInfos[i].color);
-                y += 20;
-            }
         }
 
         EndDrawing();
@@ -456,4 +459,5 @@ int main() {
     CloseWindow();
     return 0;
 }
+
 ```
