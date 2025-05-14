@@ -10,9 +10,9 @@
 ##### LightGreen	LIME	(0,158,47)	20	0.44	-	12
 ##### Green	GREEN	(0,228,48)	15	0.45	Speed x0.95 for 1.5s	14
 ##### Blue	BLUE	(0,121,241)	10	0.46	Speed x0.9 for 1.5s	17
-####Purple	PURPLE	(200,122,255)	5	0.47	Speed x0.8 for 1.5s	22
-White	WHITE	(255,255,255)	100	0.30	Size x2 for 2s	2
-SkyBlue	SKYBLUE	(102,191,255)	300	0.39	Can't move for 1.5s (stun)	2
+##### Purple	PURPLE	(200,122,255)	5	0.47	Speed x0.8 for 1.5s	22
+##### White	WHITE	(255,255,255)	100	0.30	Size x2 for 2s	2
+##### SkyBlue	SKYBLUE	(102,191,255)	300	0.39	Can't move for 1.5s (stun)	2
 ```cpp
 #include "raylib.h"
 #include <vector>
