@@ -2,20 +2,22 @@
 ### 2025.05.13 GKNU C++ 프로그래밍 과제
 #### 중앙 원을 클릭해서 움직여 랜덤으로 생성되는 코인을 수집하는 게임
 #### 각 코인별 효과/지속시간/점수/확률 추가
-Red	속도 1.5배	2초
-Pink	속도 1.3배	2초
-Yellow	속도 1.1배	2초
-Green	속도 0.95배	1.5초
-Blue	속도 0.9배	1.5초
-Purple	속도 0.8배	1.5초
-SkyBlue	1.5초간 이동불가(스턴)	1.5초
-White	크기 2배	2초
+#### 코인	색상	점수	능력(버프)	확률(%)
+##### Red	RED	50	2초간 속도 1.3배	15
+##### Pink	PINK	40	없음	14
+##### Orange	ORANGE	30	없음	14
+##### Yellow	YELLOW	25	없음	14
+##### LightGreen	LIME	20	없음	14
+##### Green	GREEN	15	2초간 속도 0.8배	12
+##### Blue	BLUE	10	없음	9
+##### Purple	PURPLE	5	2초간 속도 0.6배	6
+##### White	WHITE	100	2초간 원 크기 2배	2
 ```cpp
 #include "raylib.h"
 #include <vector>
 #include <cmath>
 
-// 1. 코인 타입 정의 (SkyBlue 추가)
+// 1. 코인 타입 정의
 enum class CoinType {
     Red,
     Pink,
@@ -26,7 +28,6 @@ enum class CoinType {
     Blue,
     Purple,
     White,
-    SkyBlue,
     COUNT
 };
 
@@ -64,8 +65,6 @@ public:
                 color = PURPLE; lifeTime = 0.47f; score = 5; break;
             case CoinType::White:
                 color = WHITE; lifeTime = 0.30f; score = 100; break;
-            case CoinType::SkyBlue:
-                color = SKYBLUE; lifeTime = 0.39f; score = 300; break;
             default:
                 color = GRAY; lifeTime = 0.4f; score = 0;
         }
@@ -88,18 +87,17 @@ enum class GameState {
     GAMEOVER
 };
 
-// 3. 코인 등장 확률 (순서 CoinType과 맞추기)
+// 3. 코인 확률 설정 (합 100)
 float coinProbabilities[] = {
-    17, // Red
-    13, // Pink
-    13, // Orange
-    13, // Yellow
-    10, // LightGreen
-    10, // Green
-    8,  // Blue
-    7,  // Purple
-    2,  // White
-    7   // SkyBlue
+    15, // Red
+    14, // Pink
+    14, // Orange
+    14, // Yellow
+    14, // LightGreen
+    12, // Green
+    9,  // Blue
+    6,  // Purple
+    2   // White
 };
 const int coinTypeCount = sizeof(coinProbabilities)/sizeof(float);
 float cumulativeProbabilities[coinTypeCount];
@@ -110,7 +108,6 @@ void InitProbabilities() {
         cumulativeProbabilities[i] = cumulativeProbabilities[i-1] + coinProbabilities[i];
 }
 
-// 4. 확률에 따라 코인 타입 뽑기
 CoinType GetRandomCoinType() {
     float r = GetRandomValue(0, 9999) / 100.0f; // 0~100
     for (int i = 0; i < coinTypeCount; ++i) {
@@ -136,13 +133,12 @@ int main() {
     bool dragging = false;
     Vector2 dragOffset = {0,0};
 
-    float defaultMoveSpeed = 300.0f;
+    // (1) 기본 이동속도를 2배로!
+    float defaultMoveSpeed = 600.0f;
     float moveSpeed = defaultMoveSpeed;
 
-    // 버프/디버프/스턴 지속시간
-    const float SPEED_BUFF_DURATION = 2.0f;
-    const float SPEED_DEBUFF_DURATION = 1.5f;
-    const float STUN_DURATION = 1.5f;
+    // 버프 지속시간
+    const float BUFF_DURATION = 2.0f;
 
     // 버프 상태 변수
     bool whiteBuffActive = false;
@@ -152,8 +148,8 @@ int main() {
     float speedBuffStartTime = 0.0f;
     float speedBuffMultiplier = 1.0f;
 
-    bool stunActive = false;
-    float stunStartTime = 0.0f;
+    // (2) 원 색상 변경
+    Color circleColor = SKYBLUE;
 
     std::vector<Coin> coins;
     float coinSpawnTimer = 0.0f;
@@ -174,7 +170,7 @@ int main() {
                 whiteBuffActive = false;
                 speedBuffActive = false;
                 speedBuffMultiplier = 1.0f;
-                stunActive = false;
+                circleColor = SKYBLUE;
                 gameStartTime = GetTime();
                 coinSpawnTimer = 0.0f;
             }
@@ -183,52 +179,42 @@ int main() {
             float elapsed = GetTime() - gameStartTime;
             float remaining = TIME_LIMIT - elapsed;
 
-            // White 버프
-            if (whiteBuffActive && GetTime() - whiteBuffStartTime >= SPEED_BUFF_DURATION) {
+            // White 버프 체크
+            if (whiteBuffActive && GetTime() - whiteBuffStartTime >= BUFF_DURATION) {
                 circleRadius = defaultCircleRadius;
                 whiteBuffActive = false;
             }
 
-            // 속도 버프/디버프
-            if (speedBuffActive) {
-                float duration = (speedBuffMultiplier < 1.0f) ? SPEED_DEBUFF_DURATION : SPEED_BUFF_DURATION;
-                if (GetTime() - speedBuffStartTime >= duration) {
-                    moveSpeed = defaultMoveSpeed;
-                    speedBuffActive = false;
-                    speedBuffMultiplier = 1.0f;
-                }
-            }
-
-            // 스턴(이동불가)
-            if (stunActive && GetTime() - stunStartTime >= STUN_DURATION) {
-                stunActive = false;
+            // 속도 버프 체크
+            if (speedBuffActive && GetTime() - speedBuffStartTime >= BUFF_DURATION) {
+                moveSpeed = defaultMoveSpeed;
+                speedBuffActive = false;
+                speedBuffMultiplier = 1.0f;
             }
 
             if (remaining <= 0.0f) {
                 state = GameState::GAMEOVER;
             } else {
                 Vector2 mouse = GetMousePosition();
-                if (!stunActive) {
-                    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                        float dist = sqrtf((mouse.x - circlePos.x)*(mouse.x - circlePos.x) + (mouse.y - circlePos.y)*(mouse.y - circlePos.y));
-                        if (dist <= circleRadius) {
-                            dragging = true;
-                            dragOffset = {circlePos.x - mouse.x, circlePos.y - mouse.y};
-                        }
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    float dist = sqrtf((mouse.x - circlePos.x)*(mouse.x - circlePos.x) + (mouse.y - circlePos.y)*(mouse.y - circlePos.y));
+                    if (dist <= circleRadius) {
+                        dragging = true;
+                        dragOffset = {circlePos.x - mouse.x, circlePos.y - mouse.y};
                     }
-                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragging = false;
-                    if (dragging) {
-                        Vector2 target = {mouse.x + dragOffset.x, mouse.y + dragOffset.y};
-                        Vector2 delta = {target.x - circlePos.x, target.y - circlePos.y};
-                        float dist = sqrtf(delta.x*delta.x + delta.y*delta.y);
-                        float maxMove = moveSpeed * GetFrameTime();
-                        if (dist > maxMove) {
-                            delta.x = delta.x / dist * maxMove;
-                            delta.y = delta.y / dist * maxMove;
-                        }
-                        circlePos.x += delta.x;
-                        circlePos.y += delta.y;
+                }
+                if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) dragging = false;
+                if (dragging) {
+                    Vector2 target = {mouse.x + dragOffset.x, mouse.y + dragOffset.y};
+                    Vector2 delta = {target.x - circlePos.x, target.y - circlePos.y};
+                    float dist = sqrtf(delta.x*delta.x + delta.y*delta.y);
+                    float maxMove = moveSpeed * GetFrameTime();
+                    if (dist > maxMove) {
+                        delta.x = delta.x / dist * maxMove;
+                        delta.y = delta.y / dist * maxMove;
                     }
+                    circlePos.x += delta.x;
+                    circlePos.y += delta.y;
                 }
 
                 coinSpawnTimer += GetFrameTime();
@@ -248,6 +234,8 @@ int main() {
                     }
                     if (CheckCircleCollision(circlePos, circleRadius, coin.pos, coin.radius)) {
                         score += coin.score;
+                        // (2) 코인을 먹으면 원 색상을 그 코인 색으로!
+                        circleColor = coin.color;
                         switch (coin.type) {
                             case CoinType::White:
                                 circleRadius = defaultCircleRadius * 2.0f;
@@ -255,44 +243,22 @@ int main() {
                                 whiteBuffStartTime = GetTime();
                                 break;
                             case CoinType::Red:
-                                moveSpeed = defaultMoveSpeed * 1.5f;
-                                speedBuffActive = true;
-                                speedBuffStartTime = GetTime();
-                                speedBuffMultiplier = 1.5f;
-                                break;
-                            case CoinType::Pink:
                                 moveSpeed = defaultMoveSpeed * 1.3f;
                                 speedBuffActive = true;
                                 speedBuffStartTime = GetTime();
                                 speedBuffMultiplier = 1.3f;
                                 break;
-                            case CoinType::Yellow:
-                                moveSpeed = defaultMoveSpeed * 1.1f;
-                                speedBuffActive = true;
-                                speedBuffStartTime = GetTime();
-                                speedBuffMultiplier = 1.1f;
-                                break;
                             case CoinType::Green:
-                                moveSpeed = defaultMoveSpeed * 0.95f;
-                                speedBuffActive = true;
-                                speedBuffStartTime = GetTime();
-                                speedBuffMultiplier = 0.95f;
-                                break;
-                            case CoinType::Blue:
-                                moveSpeed = defaultMoveSpeed * 0.9f;
-                                speedBuffActive = true;
-                                speedBuffStartTime = GetTime();
-                                speedBuffMultiplier = 0.9f;
-                                break;
-                            case CoinType::Purple:
                                 moveSpeed = defaultMoveSpeed * 0.8f;
                                 speedBuffActive = true;
                                 speedBuffStartTime = GetTime();
                                 speedBuffMultiplier = 0.8f;
                                 break;
-                            case CoinType::SkyBlue:
-                                stunActive = true;
-                                stunStartTime = GetTime();
+                            case CoinType::Purple:
+                                moveSpeed = defaultMoveSpeed * 0.6f;
+                                speedBuffActive = true;
+                                speedBuffStartTime = GetTime();
+                                speedBuffMultiplier = 0.6f;
                                 break;
                             default:
                                 break;
@@ -313,7 +279,7 @@ int main() {
                 whiteBuffActive = false;
                 speedBuffActive = false;
                 speedBuffMultiplier = 1.0f;
-                stunActive = false;
+                circleColor = SKYBLUE;
                 gameStartTime = GetTime();
                 coinSpawnTimer = 0.0f;
             }
@@ -337,7 +303,8 @@ int main() {
             DrawText(quitMsg, (screenWidth - quitWidth) / 2, screenHeight/2 + 50, 24, GRAY);
         }
         else if (state == GameState::GAME) {
-            DrawCircleV(circlePos, circleRadius, SKYBLUE);
+            // (2) 원 색상 적용
+            DrawCircleV(circlePos, circleRadius, circleColor);
 
             for (const auto& coin : coins)
                 coin.Draw();
@@ -354,9 +321,6 @@ int main() {
             }
             if (speedBuffActive) {
                 DrawText(TextFormat("Speed Buff: %.2fx", speedBuffMultiplier), 10, 80, 24, WHITE);
-            }
-            if (stunActive) {
-                DrawText("Stunned! Can't move!", 10, 110, 24, SKYBLUE);
             }
         }
         else if (state == GameState::GAMEOVER) {
