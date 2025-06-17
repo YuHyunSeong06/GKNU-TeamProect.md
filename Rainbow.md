@@ -1,14 +1,12 @@
 # 무지개 사각형
 ```c
 #pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "glu32.lib")  // ⬅️ 추가 필요
+#pragma comment(lib, "glu32.lib")
 
 #include <windows.h>
 #include <gl/GL.h>
-#include <gl/GLU.h>  // ⬅️ 추가 필요
+#include <gl/GLU.h>
 #include <cmath>
-#include <ctime>
-
 
 LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_DESTROY) { PostQuitMessage(0); return 0; }
@@ -18,7 +16,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     WNDCLASS wc = { CS_OWNDC, WndProc, 0, 0, hInst, 0, 0, 0, 0, L"GL" };
     RegisterClass(&wc);
-    HWND hwnd = CreateWindow(L"GL", L"Rainbow Rectangle with 3D Effect",
+    HWND hwnd = CreateWindow(L"GL", L"Rainbow Circle Inside Rectangle",
         WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, 0, 0, hInst, 0);
     ShowWindow(hwnd, nCmdShow);
 
@@ -28,79 +26,67 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
     SetPixelFormat(dc, ChoosePixelFormat(dc, &pfd), &pfd);
     HGLRC rc = wglCreateContext(dc); wglMakeCurrent(dc, rc);
 
-    // 초기 설정: 투영 방식 변경
+    // 투영 설정 (2D 직교 투영)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0, 800.0 / 600.0, 1.0, 10.0);  // 3D 시야 확보
+    gluOrtho2D(-1, 1, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 
     MSG msg;
     float angle = 0.0f;
 
+    // 무지개 색상
+    float colors[7][3] = {
+        {1.0f, 0.0f, 0.0f},   // 빨강
+        {1.0f, 0.5f, 0.0f},   // 주황
+        {1.0f, 1.0f, 0.0f},   // 노랑
+        {0.0f, 1.0f, 0.0f},   // 초록
+        {0.0f, 0.0f, 1.0f},   // 파랑
+        {0.3f, 0.0f, 0.5f},   // 남색
+        {0.5f, 0.0f, 1.0f}    // 보라
+    };
+
     while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE) || 1) {
         if (msg.message == WM_QUIT) break;
         TranslateMessage(&msg); DispatchMessage(&msg);
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1); // 배경색
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST); // 깊이 버퍼 사용
-
+        glClearColor(0.0f, 0.0f, 0.0f, 1);  // 배경 검정
+        glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
-        glTranslatef(0.0f, 0.0f, -3.0f); // 뒤로 카메라 이동 (Z축)
 
-        angle += 0.01f; // 시간에 따라 변화하는 각도 (색 애니메이션용)
+        angle += 0.02f;
 
-        // 무지개 색 사각형 그리기 (각 줄마다 색 변하게)
-        float colors[7][3] = {
-            {1.0f, 0.0f, 0.0f}, {1.0f, 0.5f, 0.0f}, {1.0f, 1.0f, 0.0f},
-            {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.3f, 0.0f, 0.5f}, {0.5f, 0.0f, 1.0f}
-        };
+        // 사각형 배경 (흰색)
+        glColor3f(1, 1, 1);
+        glBegin(GL_QUADS);
+        glVertex2f(-0.6f, -0.6f);
+        glVertex2f(0.6f, -0.6f);
+        glVertex2f(0.6f, 0.6f);
+        glVertex2f(-0.6f, 0.6f);
+        glEnd();
 
-        float depth = 0.1f; // 사각형의 두께 (3D 효과용)
-        for (int i = 0; i < 7; ++i) {
-            float y1 = -0.5f + i * (1.0f / 7);
-            float y2 = -0.5f + (i + 1) * (1.0f / 7);
+        // 동심원으로 무지개 원형 색상 넣기
+        float cx = 0.0f, cy = 0.0f;
+        int numCircles = 70;     // 원 겹 수
+        int segments = 100;      // 각 원당 분할 수
+        float maxRadius = 0.6f;  // 사각형 안에 딱 맞게
 
-            // 색상 시간에 따라 약간 변형 (애니메이션)
-            float r = (colors[i][0] + sin(angle + i)) * 0.5f;
-            float g = (colors[i][1] + sin(angle + i + 2)) * 0.5f;
-            float b = (colors[i][2] + sin(angle + i + 4)) * 0.5f;
-            glColor3f(r, g, b);
+        for (int i = numCircles - 1; i >= 0; --i) {
+            float r = maxRadius * i / numCircles;
 
-            glBegin(GL_QUADS);
-            // 앞면
-            glVertex3f(-0.5f, y1, depth);
-            glVertex3f(0.5f, y1, depth);
-            glVertex3f(0.5f, y2, depth);
-            glVertex3f(-0.5f, y2, depth);
+            // 색상 인덱스 반복적으로 계산 (회전 효과 포함)
+            int colorIndex = (i + int(angle * 10)) % 7;
+            float* color = colors[colorIndex];
+            glColor3f(color[0], color[1], color[2]);
 
-            // 뒷면
-            glVertex3f(-0.5f, y1, -depth);
-            glVertex3f(0.5f, y1, -depth);
-            glVertex3f(0.5f, y2, -depth);
-            glVertex3f(-0.5f, y2, -depth);
-
-            // 상단
-            glVertex3f(-0.5f, y2, depth);
-            glVertex3f(0.5f, y2, depth);
-            glVertex3f(0.5f, y2, -depth);
-            glVertex3f(-0.5f, y2, -depth);
-
-            // 하단
-            glVertex3f(-0.5f, y1, depth);
-            glVertex3f(0.5f, y1, depth);
-            glVertex3f(0.5f, y1, -depth);
-            glVertex3f(-0.5f, y1, -depth);
-
-            glEnd();
-
-            // 윤곽선 추가 (검은 선)
-            glColor3f(0.0f, 0.0f, 0.0f);
-            glBegin(GL_LINE_LOOP);
-            glVertex3f(-0.5f, y1, depth);
-            glVertex3f(0.5f, y1, depth);
-            glVertex3f(0.5f, y2, depth);
-            glVertex3f(-0.5f, y2, depth);
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex2f(cx, cy); // 중심
+            for (int j = 0; j <= segments; ++j) {
+                float theta = 2.0f * 3.14159f * j / segments;
+                float x = cx + r * cos(theta);
+                float y = cy + r * sin(theta);
+                glVertex2f(x, y);
+            }
             glEnd();
         }
 
@@ -110,5 +96,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
     wglMakeCurrent(0, 0); wglDeleteContext(rc); ReleaseDC(hwnd, dc);
     return 0;
 }
-
 ```
