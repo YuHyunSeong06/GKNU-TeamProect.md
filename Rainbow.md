@@ -1,4 +1,7 @@
 # 무지개 사각형
+** 무지개 사각형
+** 1. 무지개 사각형의 색상이 축을 중심으로 시계방향으로 돌아감
+** 2. 정육면체 형태로 만들고 다각도에서 볼 수 있음
 ```c
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
