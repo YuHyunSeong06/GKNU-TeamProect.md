@@ -41,7 +41,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
         if (msg.message == WM_QUIT) break;
         TranslateMessage(&msg); DispatchMessage(&msg);
 
-        glClearColor(0.0f, 0.9f, 0.99f, 1); // 배경색
+        glClearColor(0.0f, 0.0f, 0.0f, 1); // 배경색
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST); // 깊이 버퍼 사용
 
@@ -70,26 +70,26 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpCmdLine, in
             glBegin(GL_QUADS);
             // 앞면
             glVertex3f(-0.5f, y1, depth);
-            glVertex3f( 0.5f, y1, depth);
-            glVertex3f( 0.5f, y2, depth);
+            glVertex3f(0.5f, y1, depth);
+            glVertex3f(0.5f, y2, depth);
             glVertex3f(-0.5f, y2, depth);
 
             // 뒷면
             glVertex3f(-0.5f, y1, -depth);
-            glVertex3f( 0.5f, y1, -depth);
-            glVertex3f( 0.5f, y2, -depth);
+            glVertex3f(0.5f, y1, -depth);
+            glVertex3f(0.5f, y2, -depth);
             glVertex3f(-0.5f, y2, -depth);
 
             // 상단
             glVertex3f(-0.5f, y2, depth);
-            glVertex3f( 0.5f, y2, depth);
-            glVertex3f( 0.5f, y2, -depth);
+            glVertex3f(0.5f, y2, depth);
+            glVertex3f(0.5f, y2, -depth);
             glVertex3f(-0.5f, y2, -depth);
 
             // 하단
             glVertex3f(-0.5f, y1, depth);
-            glVertex3f( 0.5f, y1, depth);
-            glVertex3f( 0.5f, y1, -depth);
+            glVertex3f(0.5f, y1, depth);
+            glVertex3f(0.5f, y1, -depth);
             glVertex3f(-0.5f, y1, -depth);
 
             glEnd();
