@@ -1,11 +1,14 @@
 # 무지개 사각형
 ```c
 #pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "glu32.lib")  // ⬅️ 추가 필요
 
 #include <windows.h>
 #include <gl/GL.h>
-#include <cmath>  // sin, cos 등 사용
+#include <gl/GLU.h>  // ⬅️ 추가 필요
+#include <cmath>
 #include <ctime>
+
 
 LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     if (m == WM_DESTROY) { PostQuitMessage(0); return 0; }
